@@ -7,6 +7,7 @@
   
   <!-- A-Frame VR Framework -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
   
   <!-- Custom Game Styles -->
   <link rel="stylesheet" href="style.css">
@@ -73,7 +74,7 @@
     <!-- The 3D Pokemon (Pikachu-inspired procedural model) -->
     <!-- Wrapped in a container for easier catch animations and height offsets -->
     <a-entity id="pokemon-container" position="0 0.8 -3">
-		<a-entity id="pokemon" class="targetable" gltf-model="#my-pokemon-model" scale="0.1 0.1 0.1" position="0 0 0">
+		<a-entity id="pokemon" class="targetable" gltf-model="#my-pokemon-model" animation-mixer scale="0.1 0.1 0.1" position="0 0 0">
 		</a-entity>
     </a-entity>
 
