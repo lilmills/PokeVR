@@ -47,6 +47,7 @@
     <a-assets>
       <!-- We will generate the grid texture dynamically in game.js and inject it -->
       <canvas id="grid-canvas" width="128" height="128"></canvas>
+	  <a-asset-item id="my-pokemon-model" src="uploads_files_5997312_Growlithe.glb"></a-asset-item>
     </a-assets>
 
     <!-- Sky/Environment (Subtle Dark Space) -->
@@ -72,46 +73,8 @@
     <!-- The 3D Pokemon (Pikachu-inspired procedural model) -->
     <!-- Wrapped in a container for easier catch animations and height offsets -->
     <a-entity id="pokemon-container" position="0 0.8 -3">
-      <a-entity id="pokemon" class="targetable">
-        
-        <!-- Main Yellow Body/Head -->
-        <a-sphere color="#FFDD00" radius="0.3" position="0 0.25 0">
-          
-          <!-- Eyes -->
-          <a-sphere color="#000000" radius="0.03" position="-0.1 0.08 0.25"></a-sphere>
-          <a-sphere color="#000000" radius="0.03" position="0.1 0.08 0.25"></a-sphere>
-          
-          <!-- Cheeks (Red Spots) -->
-          <a-sphere color="#FF3333" radius="0.05" position="-0.18 -0.02 0.22"></a-sphere>
-          <a-sphere color="#FF3333" radius="0.05" position="0.18 -0.02 0.22"></a-sphere>
-          
-          <!-- Ears (Yellow cones with black tips) -->
-          <a-cone color="#FFDD00" radius-bottom="0.05" radius-top="0.01" height="0.25" position="-0.15 0.25 0" rotation="0 0 -25">
-            <a-cone color="#000000" radius-bottom="0.02" radius-top="0.005" height="0.08" position="0 0.08 0"></a-cone>
-          </a-cone>
-          <a-cone color="#FFDD00" radius-bottom="0.05" radius-top="0.01" height="0.25" position="0.15 0.25 0" rotation="0 0 25">
-            <a-cone color="#000000" radius-bottom="0.02" radius-top="0.005" height="0.08" position="0 0.08 0"></a-cone>
-          </a-cone>
-          
-          <!-- Tiny Nose -->
-          <a-cone color="#111111" radius-bottom="0.015" radius-top="0.001" height="0.025" position="0 0.02 0.28" rotation="90 0 0"></a-cone>
-        </a-sphere>
-
-        <!-- Lower Torso Cylinder -->
-        <a-cylinder color="#FFDD00" radius="0.27" height="0.35" position="0 -0.02 0"></a-cylinder>
-
-        <!-- Feet -->
-        <a-sphere color="#FFDD00" radius="0.07" position="-0.12 -0.22 0.1"></a-sphere>
-        <a-sphere color="#FFDD00" radius="0.07" position="0.12 -0.22 0.1"></a-sphere>
-        
-        <!-- Lightning Bolt Tail (Constructed from boxes) -->
-        <a-entity id="pokemon-tail" position="0 0 -0.2" rotation="0 180 0">
-          <a-box color="#FFDD00" width="0.05" height="0.18" depth="0.05" position="0 0 0" rotation="0 0 45"></a-box>
-          <a-box color="#FFDD00" width="0.05" height="0.18" depth="0.05" position="-0.08 0.1 0" rotation="0 0 -45"></a-box>
-          <a-box color="#FFDD00" width="0.08" height="0.25" depth="0.05" position="-0.15 0.25 0" rotation="0 0 45"></a-box>
-        </a-entity>
-        
-      </a-entity>
+		<a-entity id="pokemon" class="targetable" glb-model="#my-pokemon-model" scale="1 1 1" position="0 0 0">
+		</a-entity>
     </a-entity>
 
     <!-- Dynamic Spawning Container for Active Pokéballs -->
