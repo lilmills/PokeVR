@@ -517,10 +517,7 @@ AFRAME.registerComponent('thrown-ball', {
     this.state = 'collided';
     this.velocity.set(0, 0, 0);
     
-    // Snap ball to pokemon location but slightly forward
-    const ballPos = new THREE.Vector3(pokemonPos.x, pokemonPos.y + 0.1, pokemonPos.z + 0.2);
-    this.el.setAttribute('position', ballPos);
-    
+    // Do NOT snap the Pokéball! Let it freeze exactly where it collided.
     // Rotate ball to face center/normal orientation
     this.el.object3D.rotation.set(0, 0, 0);
     
@@ -538,10 +535,21 @@ AFRAME.registerComponent('thrown-ball', {
     }
     const origScale = gameManager.originalPokemonScale;
     
-    // Suck-in animation: shrink Pokemon scale to 0 and shift toward Pokéball
     const suckDuration = 600; // ms
     const startTime = performance.now();
     const pokemonContainer = document.getElementById('pokemon-container');
+    
+    // Get start position of pokemon (usually 0 0 0 in local space)
+    const startPos = new THREE.Vector3(0, 0, 0);
+    
+    // Get target position of pokemon relative to its container (i.e. where the Pokéball is)
+    const ballPos = this.el.getAttribute('position');
+    const containerPos = pokemonContainer.getAttribute('position');
+    const targetPos = new THREE.Vector3(
+      ballPos.x - containerPos.x,
+      ballPos.y - containerPos.y,
+      ballPos.z - containerPos.z
+    );
     
     const animateSuckIn = (now) => {
       const elapsed = now - startTime;
@@ -555,15 +563,26 @@ AFRAME.registerComponent('thrown-ball', {
         z: origScale.z * scaleVal
       });
       
-      // Slightly shift Y/Z position towards ball center during shrink
+      // Interpolate position towards the Pokéball's center
+      const currentPos = new THREE.Vector3().lerpVectors(startPos, targetPos, progress);
+      pokemon.setAttribute('position', currentPos);
+      
+      // Make the pokemon invisible right before it enters the ball (e.g. at 85% progress)
+      if (progress > 0.85) {
+        pokemon.setAttribute('visible', 'false');
+      }
+      
       if (progress < 1) {
         requestAnimationFrame(animateSuckIn);
       } else {
         // Suction finished
         pokemonContainer.setAttribute('visible', 'false');
         
-        // Move Pokéball to drop straight down to ground
-        this.el.setAttribute('position', { x: pokemonPos.x, y: pokemonPos.y, z: pokemonPos.z });
+        // Reset the pokemon's local position and visibility for future breakouts/respawns
+        pokemon.setAttribute('position', '0 0 0');
+        pokemon.setAttribute('visible', 'true');
+        
+        // Move Pokéball to drop straight down to ground (from its current position, so X and Z do not change)
         this.state = 'dropping';
         this.velocity.set(0, 0, 0);
       }
@@ -637,10 +656,14 @@ AFRAME.registerComponent('thrown-ball', {
     playEscapeSound();
     
     // Escape animation
-    // Spawn Pokemon back at original scale, popping out of Pokéball
+    // Spawn Pokemon back at original scale, popping out of the Pokéball's landing position
     const pokemon = document.getElementById('pokemon');
     const pokemonContainer = document.getElementById('pokemon-container');
     const origScale = gameManager.originalPokemonScale || {x: 1, y: 1, z: 1};
+    
+    // Move the container to the Pokéball's current landing position (preserve height Y=0.8 for safe floor clipping)
+    const ballPos = this.el.getAttribute('position');
+    pokemonContainer.setAttribute('position', `${ballPos.x} 0.8 ${ballPos.z}`);
     
     pokemonContainer.setAttribute('visible', 'true');
     pokemon.setAttribute('scale', {
