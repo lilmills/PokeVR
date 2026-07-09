@@ -527,20 +527,33 @@ AFRAME.registerComponent('thrown-ball', {
     playHitSound(0.4);
     playSuckInSound();
     
+    // Capture original scale if not already captured
+    if (!gameManager.originalPokemonScale) {
+      const currentScale = pokemon.getAttribute('scale') || {x: 1, y: 1, z: 1};
+      gameManager.originalPokemonScale = {
+        x: currentScale.x ?? 1,
+        y: currentScale.y ?? 1,
+        z: currentScale.z ?? 1
+      };
+    }
+    const origScale = gameManager.originalPokemonScale;
+    
     // Suck-in animation: shrink Pokemon scale to 0 and shift toward Pokéball
     const suckDuration = 600; // ms
     const startTime = performance.now();
-    const startScale = pokemon.getAttribute('scale') || {x: 1, y: 1, z: 1};
     const pokemonContainer = document.getElementById('pokemon-container');
-    const startContainerPos = pokemonContainer.getAttribute('position');
     
     const animateSuckIn = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / suckDuration, 1);
       
-      // Interpolate scale down to 0
+      // Interpolate scale down to 0 relative to original scale
       const scaleVal = 1 - progress;
-      pokemon.setAttribute('scale', `${scaleVal} ${scaleVal} ${scaleVal}`);
+      pokemon.setAttribute('scale', {
+        x: origScale.x * scaleVal,
+        y: origScale.y * scaleVal,
+        z: origScale.z * scaleVal
+      });
       
       // Slightly shift Y/Z position towards ball center during shrink
       if (progress < 1) {
@@ -627,9 +640,14 @@ AFRAME.registerComponent('thrown-ball', {
     // Spawn Pokemon back at original scale, popping out of Pokéball
     const pokemon = document.getElementById('pokemon');
     const pokemonContainer = document.getElementById('pokemon-container');
+    const origScale = gameManager.originalPokemonScale || {x: 1, y: 1, z: 1};
     
     pokemonContainer.setAttribute('visible', 'true');
-    pokemon.setAttribute('scale', '0.01 0.01 0.01');
+    pokemon.setAttribute('scale', {
+      x: origScale.x * 0.01,
+      y: origScale.y * 0.01,
+      z: origScale.z * 0.01
+    });
     
     const popDuration = 400; // ms
     const startTime = performance.now();
@@ -638,8 +656,12 @@ AFRAME.registerComponent('thrown-ball', {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / popDuration, 1);
       
-      // Scale back up to 1
-      pokemon.setAttribute('scale', `${progress} ${progress} ${progress}`);
+      // Scale back up relative to original scale
+      pokemon.setAttribute('scale', {
+        x: origScale.x * progress,
+        y: origScale.y * progress,
+        z: origScale.z * progress
+      });
       
       if (progress < 1) {
         requestAnimationFrame(animatePop);
@@ -780,7 +802,12 @@ function respawnPokemon() {
   const rz = -2.0 - Math.random() * 1.5;
   
   container.setAttribute('position', `${rx} ${ry} ${rz}`);
-  pokemon.setAttribute('scale', '0.01 0.01 0.01');
+  const origScale = gameManager.originalPokemonScale || {x: 1, y: 1, z: 1};
+  pokemon.setAttribute('scale', {
+    x: origScale.x * 0.01,
+    y: origScale.y * 0.01,
+    z: origScale.z * 0.01
+  });
   container.setAttribute('visible', 'true');
   
   // Pop animation scale up
@@ -794,7 +821,11 @@ function respawnPokemon() {
     // Elastic ease-out pop scale
     // f(x) = sin(x*pi/2)
     const scaleVal = Math.sin(progress * Math.PI / 2);
-    pokemon.setAttribute('scale', `${scaleVal} ${scaleVal} ${scaleVal}`);
+    pokemon.setAttribute('scale', {
+      x: origScale.x * scaleVal,
+      y: origScale.y * scaleVal,
+      z: origScale.z * scaleVal
+    });
     
     if (progress < 1) {
       requestAnimationFrame(animateSpawn);
@@ -864,6 +895,17 @@ window.addEventListener('mousedown', function (e) {
 window.addEventListener('DOMContentLoaded', () => {
   generateGrid();
   
+  // Capture original scale of the pokemon at startup
+  const pokemon = document.getElementById('pokemon');
+  if (pokemon) {
+    const currentScale = pokemon.getAttribute('scale') || {x: 1, y: 1, z: 1};
+    gameManager.originalPokemonScale = {
+      x: currentScale.x ?? 1,
+      y: currentScale.y ?? 1,
+      z: currentScale.z ?? 1
+    };
+  }
+  
   // UI Button Click Handler to enter game
   const startBtn = document.getElementById('start-btn');
   const overlay = document.getElementById('ui-overlay');
@@ -873,17 +915,19 @@ window.addEventListener('DOMContentLoaded', () => {
     initAudio();
     playSuccessSound(); // chime to verify audio works
     
-    // Add a simple animation to the Pokemon tail to make it feel alive
+    // Add a simple animation to the Pokemon tail to make it feel alive (if it exists)
     const tail = document.getElementById('pokemon-tail');
-    let angle = 0;
-    const animateIdle = () => {
-      if (gameManager.gameState === 'idle') {
-        angle += 0.05;
-        // Tail wag
-        tail.object3D.rotation.y = Math.PI + Math.sin(angle) * 0.15;
-      }
-      requestAnimationFrame(animateIdle);
-    };
-    animateIdle();
+    if (tail) {
+      let angle = 0;
+      const animateIdle = () => {
+        if (gameManager.gameState === 'idle' && tail.object3D) {
+          angle += 0.05;
+          // Tail wag
+          tail.object3D.rotation.y = Math.PI + Math.sin(angle) * 0.15;
+        }
+        requestAnimationFrame(animateIdle);
+      };
+      animateIdle();
+    }
   });
 });
