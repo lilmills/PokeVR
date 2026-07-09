@@ -487,17 +487,26 @@ AFRAME.registerComponent('thrown-ball', {
     if (gameManager.gameState !== 'idle') return;
     
     const pokemon = document.getElementById('pokemon');
-    const pokemonWorldPos = new THREE.Vector3();
-    pokemon.object3D.getWorldPosition(pokemonWorldPos);
+    if (!pokemon) return;
+    
+    // Calculate the precise 3D bounding box of the Pokemon
+    const box = new THREE.Box3().setFromObject(pokemon.object3D);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    
+    // Determine the collision radius dynamically from the bounding box dimensions
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const pokemonRadius = Math.max(size.x, size.y, size.z) / 2;
+    const collisionThreshold = pokemonRadius + 0.12; // Pokemon visual radius + ball radius (0.12m)
     
     const ballWorldPos = new THREE.Vector3();
     this.el.object3D.getWorldPosition(ballWorldPos);
     
-    // Distance check (pokemon radius ~0.3m + ball radius ~0.12m = 0.42m)
-    const dist = ballWorldPos.distanceTo(pokemonWorldPos);
+    const dist = ballWorldPos.distanceTo(center);
     
-    if (dist < 0.45) {
-      this.triggerCatchSequence(pokemon, pokemonWorldPos);
+    if (dist < collisionThreshold) {
+      this.triggerCatchSequence(pokemon, center);
     }
   },
   
@@ -807,6 +816,11 @@ window.addEventListener('mousedown', function (e) {
   const overlay = document.getElementById('ui-overlay');
   if (!overlay.classList.contains('hidden')) return;
   
+  // Ignore clicks on HUD or VR entrance buttons
+  if (e.target.closest('#hud-overlay') || e.target.closest('.a-enter-vr') || e.target.closest('.a-enter-vr-button')) {
+    return;
+  }
+  
   // Check if WebXR VR session is currently running
   const sceneEl = document.querySelector('a-scene');
   if (sceneEl.is('vr-mode')) return; // Handled by throw-spawner VR component
@@ -814,24 +828,30 @@ window.addEventListener('mousedown', function (e) {
   if (gameManager.gameState !== 'idle') return;
   initAudio();
   
-  // Get camera direction and position
+  // Get camera components
   const cameraEl = document.getElementById('camera');
-  const cameraObj = cameraEl.object3D;
+  const camera = cameraEl.components.camera.camera;
+  if (!camera) return;
   
+  // Get normalized mouse coordinates (-1 to 1)
+  const mouse = new THREE.Vector2();
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  
+  // Set raycaster from camera through mouse click coordinate
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(mouse, camera);
+  const direction = raycaster.ray.direction.clone().normalize();
+  
+  // Get camera world position for spawning
   const spawnPos = new THREE.Vector3();
-  cameraObj.getWorldPosition(spawnPos);
+  cameraEl.object3D.getWorldPosition(spawnPos);
   
-  // Shift spawning slightly down/forward from camera to not block view
-  const forward = new THREE.Vector3(0, 0, -1);
-  forward.applyQuaternion(cameraObj.quaternion);
+  // Offset spawn position slightly forward in the click direction so it doesn't clip
+  spawnPos.addScaledVector(direction, 0.45);
   
-  spawnPos.addScaledVector(forward, 0.4);
-  spawnPos.y -= 0.15; // lower height
-  
-  // Calculate launch velocity (aim camera direct + slight upward angle)
-  const launchVelocity = forward.clone().normalize();
-  launchVelocity.y += 0.15; // lob it up slightly
-  launchVelocity.normalize().multiplyScalar(9.0); // 9 m/s desktop speed
+  // Set launch velocity in the click direction (slightly fast to counter gravity arc)
+  const launchVelocity = direction.multiplyScalar(11.5); // 11.5 m/s desktop speed
   
   spawnFlyingBall(spawnPos, launchVelocity);
   playThrowSound();
