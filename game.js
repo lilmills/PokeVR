@@ -529,11 +529,11 @@ AFRAME.registerComponent('thrown-ball', {
     
     // Capture original scale if not already captured
     if (!gameManager.originalPokemonScale) {
-      const currentScale = pokemon.getAttribute('scale') || {x: 1, y: 1, z: 1};
+      const scale = pokemon.object3D.scale;
       gameManager.originalPokemonScale = {
-        x: currentScale.x ?? 1,
-        y: currentScale.y ?? 1,
-        z: currentScale.z ?? 1
+        x: scale.x,
+        y: scale.y,
+        z: scale.z
       };
     }
     const origScale = gameManager.originalPokemonScale;
@@ -895,15 +895,23 @@ window.addEventListener('mousedown', function (e) {
 window.addEventListener('DOMContentLoaded', () => {
   generateGrid();
   
-  // Capture original scale of the pokemon at startup
+  // Capture original scale of the pokemon at startup after scene loads
+  const sceneEl = document.querySelector('a-scene');
   const pokemon = document.getElementById('pokemon');
-  if (pokemon) {
-    const currentScale = pokemon.getAttribute('scale') || {x: 1, y: 1, z: 1};
-    gameManager.originalPokemonScale = {
-      x: currentScale.x ?? 1,
-      y: currentScale.y ?? 1,
-      z: currentScale.z ?? 1
+  if (pokemon && sceneEl) {
+    const captureScale = () => {
+      const scale = pokemon.object3D.scale;
+      gameManager.originalPokemonScale = {
+        x: scale.x,
+        y: scale.y,
+        z: scale.z
+      };
     };
+    if (sceneEl.hasLoaded) {
+      captureScale();
+    } else {
+      sceneEl.addEventListener('loaded', captureScale);
+    }
   }
   
   // UI Button Click Handler to enter game
