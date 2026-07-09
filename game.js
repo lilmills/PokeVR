@@ -582,9 +582,10 @@ AFRAME.registerComponent('thrown-ball', {
         pokemon.setAttribute('position', '0 0 0');
         pokemon.setAttribute('visible', 'true');
         
-        // Move Pokéball to drop straight down to ground (from its current position, so X and Z do not change)
-        this.state = 'dropping';
+        // Go directly to shaking in mid-air (hovering at current collision position!)
+        this.state = 'shaking';
         this.velocity.set(0, 0, 0);
+        this.startShakingSequence();
       }
     };
     
@@ -661,9 +662,9 @@ AFRAME.registerComponent('thrown-ball', {
     const pokemonContainer = document.getElementById('pokemon-container');
     const origScale = gameManager.originalPokemonScale || {x: 1, y: 1, z: 1};
     
-    // Move the container to the Pokéball's current landing position (preserve height Y=0.8 for safe floor clipping)
+    // Move the container to the Pokéball's current hovering position
     const ballPos = this.el.getAttribute('position');
-    pokemonContainer.setAttribute('position', `${ballPos.x} 0.8 ${ballPos.z}`);
+    pokemonContainer.setAttribute('position', `${ballPos.x} ${ballPos.y} ${ballPos.z}`);
     
     pokemonContainer.setAttribute('visible', 'true');
     pokemon.setAttribute('scale', {
